@@ -50,7 +50,7 @@ for split in folders:
         vocal_sr, vocal_wav, vocal_sec = read_signal('{}{}'.format(stems[1], '16.wav'))
         assert mix_sr == real_sr
         assert vocal_sr == real_sr
-        assert len(mix_wav) == len(vocal_wav)
+        # assert len(mix_wav) == len(vocal_wav)
         assert len(mix_wav) / mix_sr == len(vocal_wav) / vocal_sr
         assert mix_sec == vocal_sec
         seconds_count = mix_sec
