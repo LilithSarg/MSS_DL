@@ -10,6 +10,7 @@ step = window_len // 2
 stems = ['mixture', 'vocals']
 folders = ['train', 'val']
 stride = 0.95
+bad_songs = ['Leaf - Come Around']
 
 
 def read_signal(path):
@@ -43,16 +44,16 @@ def frame_fft_sa(cur_data_, frame_count_, window_len_, step_):
 os.chdir('../MUSDB18-HQ')
 for split in folders:
     os.chdir('{}'.format(split))
-    for song in os.listdir(os.getcwd()):
+    for song in list(set(os.listdir(os.getcwd())) - set(bad_songs)):
         os.chdir('{}'.format(song))
         mk_stem_fft_dir(['{}_{}'.format(stem, 'prep') for stem in stems])
         mix_sr, mix_wav, mix_sec = read_signal('{}{}'.format(stems[0], '16.wav'))
         vocal_sr, vocal_wav, vocal_sec = read_signal('{}{}'.format(stems[1], '16.wav'))
-        # assert mix_sr == real_sr
-        # assert vocal_sr == real_sr
-        # # assert len(mix_wav) == len(vocal_wav)
-        # assert len(mix_wav) / mix_sr == len(vocal_wav) / vocal_sr
-        # assert mix_sec == vocal_sec
+        assert mix_sr == real_sr
+        assert vocal_sr == real_sr
+        assert len(mix_wav) == len(vocal_wav)
+        assert len(mix_wav) / mix_sr == len(vocal_wav) / vocal_sr
+        assert mix_sec == vocal_sec
         seconds_count = mix_sec
         sr = mix_sr
         window_arr = vorbis_window(window_len)
@@ -66,7 +67,7 @@ for split in folders:
             vocal_cur_data = vocal_wav[int(second * stride * sr): int((second * stride) * sr + window_sec * sr)]
             mix_frame_count = len(mix_cur_data) // step - 1
             vocal_frame_count = len(vocal_cur_data) // step - 1
-            # assert mix_frame_count == vocal_frame_count
+            assert mix_frame_count == vocal_frame_count
             frame_count = mix_frame_count
             mix_sec_fft, vocal_sec_fft = \
                             [ frame_fft_sa(cur_data_, frame_count, window_len, step) for cur_data_ in [mix_cur_data, vocal_cur_data] ]
