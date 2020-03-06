@@ -9,7 +9,7 @@ window_len  = ms * sr // 1000
 step = window_len // 2
 stems = ['mixture', 'vocals']
 folders = ['train', 'val']
-stride = 0.95
+stride = 0.75
 bad_songs = ['Leaf - Come Around']
 
 
