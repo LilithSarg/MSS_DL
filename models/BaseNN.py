@@ -109,13 +109,17 @@ class BaseNN:
         minibatch_full_test = round(len(self.test_paths) / self.test_batch_size)
         x_test=[]
         y_test=[]
+        x_test_data = []
         for i in range(minibatch_full_test):
             x_test_, y_test_= self.data_loader.test_data_loader(i)
+            x_test_data.append(self.data_loader.test_data_loader(i))
             x_test = x_test + x_test_
             y_test = y_test + y_test_
         x_test = tf.stack(x_test, axis = 0)
         y_test = tf.stack(y_test, axis = 0)
-        test_cost, test_accuracy  = self.sess.run([self.cost, self.accuracy], feed_dict = {self.X: x_test, self.Y: y_test})
+        for spec in x_test_data:
+            (test_x, test_y) = spec
+            test_cost, test_accuracy  = self.sess.run([self.cost, self.accuracy], feed_dict = {self.X: test_x, self.Y: test_y})
         print("Test accuracy is: " + str(test_accuracy))
 
                         
