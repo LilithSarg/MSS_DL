@@ -47,14 +47,12 @@ for split in folders:
     for song in list(set(os.listdir(os.getcwd())) - set(bad_songs)):
         os.chdir('{}'.format(song))
         mk_stem_fft_dir(['{}_{}'.format(stem, 'prep') for stem in stems])
-        # mix_sr, mix_wav, mix_sec = read_signal('{}{}'.format(stems[0], '16.wav'))
-        # vocal_sr, vocal_wav, vocal_sec = read_signal('{}{}'.format(stems[1], '16.wav'))
-        mix_sr, mix_wav = wavfile.read('{}{}'.format(stems[0], '16.wav'))
-        vocal_sr, vocal_wav = wavfile.read('{}{}'.format(stems[1], '16.wav'))
+        mix_sr, mix_wav, mix_sec = read_signal('{}{}'.format(stems[0], '16.wav'))
+        vocal_sr, vocal_wav, vocal_sec = read_signal('{}{}'.format(stems[1], '16.wav'))
         assert mix_sr == sr
         assert vocal_sr == sr
         assert len(mix_wav) == len(vocal_wav)
-        # seconds_count = mix_sec
+        seconds_count = mix_sec
         seconds_count = int(np.round(len(mix_wav)/sr, decimals = 0))
         window_arr = vorbis_window(window_len)
         print(song)
@@ -74,5 +72,5 @@ for split in folders:
 
             np.save('./{}/{}_mixture_MP.npy'.format('mixture_prep', str(second)), mix_sec_fft)
             np.save('./{}/{}_vocals_MP.npy'.format('vocals_prep', str(second)), vocal_sec_fft)
+            os.chdir('../')
         os.chdir('../')
-    os.chdir('../')
