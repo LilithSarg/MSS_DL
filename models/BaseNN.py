@@ -56,11 +56,11 @@ class BaseNN:
             minibatch_full_v = round(len(self.val_paths)/self.val_batch_size)
             print('TRAIN MINIBATCHES -->', minibatch_full)
 
-            val_data = []
-            print('SPECTOGRAMS APPENDING FOR VAL --------------------> STARTED')
-            for spec in range(minibatch_full_v):
-                val_data.append(self.data_loader.val_data_loader(spec))
-            print('SPECTOGRAMS APPENDING FOR VAL --------------------> ENDED')
+            # val_data = []
+            # print('SPECTOGRAMS APPENDING FOR VAL --------------------> STARTED')
+            # for spec in range(minibatch_full_v):
+            #     val_data.append(self.data_loader.val_data_loader(spec))
+            # print('SPECTOGRAMS APPENDING FOR VAL --------------------> ENDED')
             print('EPOCHES -----------------------> STARTED')
             for epoch in range(self.num_epochs):
                 print('EPOCH NUMBER -----> ', epoch)
@@ -82,12 +82,12 @@ class BaseNN:
                 epoch_cost = epoch_cost / minibatch_full
                 epoch_accuracy = epoch_accuracy / minibatch_full
 
-                if epoch%validation_step == 0:
-                    for spec in val_data:
-                        (val_X, val_Y) = spec
-                        val_loss, val_prediction, val_accuracy = self.sess.run([self.cost, self.Y_pred, self.accuracy],
-                                                                                feed_dict = {self.X: val_X, self.Y: val_Y})
-                    print(val_accuracy)
+                # if epoch%validation_step == 0:
+                #     for spec in val_data:
+                #         (val_X, val_Y) = spec
+                #         val_loss, val_prediction, val_accuracy = self.sess.run([self.cost, self.Y_pred, self.accuracy],
+                #                                                                 feed_dict = {self.X: val_X, self.Y: val_Y})
+                #     print(val_accuracy)
 
                 if epoch%checkpoint_step == 0:         
                     if os.path.exists(os.path.join(os.getcwd(),self.base_dir, self.model_name, 'chekpoints'))== False:
