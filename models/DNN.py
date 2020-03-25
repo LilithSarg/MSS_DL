@@ -13,5 +13,5 @@ class DNN(BaseNN):
       
     def metrics(self, Y, Y_pred):
         cost = tf.reduce_mean(tf.square(Y_pred - Y))
-        tf.summary.Scalar('cost_funtion', cost)
+        tf.summary.scalar('cost_funtion', cost)
         return cost
