@@ -29,81 +29,78 @@ class BaseNN:
         self.base_dir = base_dir
         self.max_to_keep = max_to_keep
         self.model_name = model_name
+        self.summary_dir = os.path.join(base_dir, 'summary')
+        # checkpoints dir 
 
-    def create_network(self):                    # 100                   199                  800
-        self.X = tf.placeholder('float', [self.train_batch_size, self.sequence_length, self.fft_length], name = 'X')
-        self.Y = tf.placeholder('float', [self.train_batch_size, self.sequence_length, self.fft_length], name = 'Y')
+    def create_network(self):            # 100             199              401
+        self.X = tf.placeholder('float', [None, self.sequence_length, self.fft_length], name = 'X')
+        self.Y = tf.placeholder('float', [None, self.sequence_length, self.fft_length], name = 'Y')
         self.Y_pred = self.network(self.X)
-        self.cost = self.metrics(self.Y, self.Y_pred)[0]
-        self.accuracy = self.metrics(self.Y, self.Y_pred)[1]
-        self.opt = tf.train.AdamOptimizer(learning_rate = self.learning_rate).minimize(self.cost)
-      
+        self.cost = self.metrics(self.Y, self.Y_pred)
+        self.global_step = tf.Variable(0, trainable=False, name='global_step')  # number of batches
+        self.opt = tf.train.AdamOptimizer(learning_rate = self.learning_rate).minimize(self.cost, global_step = self.global_step)
+        
+
     def initialize_network(self):
-        self.saver = tf.train.Saver(max_to_keep=self.max_to_keep)
-        self.sess = tf.InteractiveSession()
-        if os.path.exists(os.path.join(os.getcwd(),self.base_dir, self.model_name, 'chekpoints'))== False:
-            self.sess.run(tf.global_variables_initializer())
-        else:
-            checkpoint_dir = os.path.join(os.getcwd(), self.base_dir, self.model_name, 'chekpoints')
-            ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-            if ckpt and ckpt.model_checkpoint_path:
-                ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-                self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))   
-      
+            print("[*] Initializing network...")
+            self.sess = tf.Session()
+            self.summary_op = tf.summary.merge_all()   # merges all summaries : val + train
+            self.saver = tf.train.Saver(max_to_keep=self.max_to_keep)
+            if self.summary_dir != "":
+                self.train_summary_writer = tf.summary.FileWriter(os.path.join(self.summary_dir, "train"), self.sess.graph)
+                self.val_summary_writer = tf.summary.FileWriter(os.path.join(self.summary_dir,"validation"), self.sess.graph)
+
+            checkpoint = tf.train.get_checkpoint_state(self.checkpoint_dir)
+            if checkpoint:
+                print("[*] Restoring from checkpoint...")
+                checkpoint_path = checkpoint.model_checkpoint_path
+                self.saver.restore(self.sess, checkpoint_path)
+            else:
+                self.sess.run(tf.global_variables_initializer())
+
+
+    # def initialize_network(self):
+    #     self.saver = tf.train.Saver(max_to_keep=self.max_to_keep)
+    #     self.sess = tf.Session()
+    #     if os.path.exists(os.path.join(os.getcwd(),self.base_dir, self.model_name, 'chekpoints'))== False:
+    #         self.sess.run(tf.global_variables_initializer())
+    #     else:
+    #         checkpoint_dir = os.path.join(os.getcwd(), self.base_dir, self.model_name, 'chekpoints')
+    #         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+    #         if ckpt and ckpt.model_checkpoint_path:
+    #             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
+    #             self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))   
+
     def train_model(self, display_step, validation_step, checkpoint_step, summary_step):
             print('MODEL TRAIN ---------------> STARTED ')
             minibatch_full = round(len(self.train_paths)/self.train_batch_size)
             minibatch_full_v = round(len(self.val_paths)/self.val_batch_size)
             print('TRAIN MINIBATCHES -->', minibatch_full)
 
-            # val_data = []
-            # print('SPECTOGRAMS APPENDING FOR VAL --------------------> STARTED')
-            # for spec in range(minibatch_full_v):
-            #     val_data.append(self.data_loader.val_data_loader(spec))
-            # print('SPECTOGRAMS APPENDING FOR VAL --------------------> ENDED')
             print('EPOCHES -----------------------> STARTED')
             for epoch in range(self.num_epochs):
                 print('EPOCH NUMBER -----> ', epoch)
                 random.shuffle(self.data_loader.train_paths)
-                minibatch_spec = []
+                random.shuffle(self.data_loader.val_paths)
                 for k_th_batch in range(minibatch_full):
-                    minibatch_spec.append(self.data_loader.train_data_loader(k_th_batch))
+                    train_matrix, train_label = self.data_loader.train_data_loader(k_th_batch)
+                    minibatch_opt, train_minibatch_cost, train_summary, global_step = self.sess.run([self.opt, self.cost, self.summary_op, self.global_step], 
+                                                                                  feed_dict = {self.X: train_matrix, self.Y: train_label})
 
-                epoch_cost = 0
-                epoch_accuracy = 0
-                print('SPECTOGRAMS APPENDING FOR MINIBATCH --------------------> STARTED')
-                for img in minibatch_spec:
-                    (img_X, img_Y) = img
-                    minibatch_opt, minibatch_cost, minibatch_Y_pred, minibatch_accuracy = self.sess.run([self.opt, self.cost, self.Y_pred, self.accuracy],
-                                                                                                         feed_dict = {self.X: img_X, self.Y: img_Y})
-                    epoch_cost += minibatch_cost
-                    epoch_accuracy += minibatch_accuracy
-                print('SPECTOGRAMS APPENDING FOR MINIBATCH --------------------> ENDED')
-                epoch_cost = epoch_cost / minibatch_full
-                epoch_accuracy = epoch_accuracy / minibatch_full
+                    if global_step % validation_step == 0:
+                        val_matrix, val_label = self.data_loader.val_data_loader(k_th_batch)
+                        val_minibatch_cost, val_summary = self.sess.run([self.cost, self.summary_op], 
+                                                                         feed_dict = {self.X: val_matrix, self.Y: val_label})
 
-                # if epoch%validation_step == 0:
-                #     for spec in val_data:
-                #         (val_X, val_Y) = spec
-                #         val_loss, val_prediction, val_accuracy = self.sess.run([self.cost, self.Y_pred, self.accuracy],
-                #                                                                 feed_dict = {self.X: val_X, self.Y: val_Y})
-                #     print(val_accuracy)
+                        self.val_summary_writer.add_summary(val_summary, global_step)
 
-                if epoch%checkpoint_step == 0:         
-                    if os.path.exists(os.path.join(os.getcwd(),self.base_dir, self.model_name, 'chekpoints'))== False:
-                        os.makedirs(os.path.join(os.getcwd(),self.base_dir, self.model_name, 'chekpoints'),exist_ok=True)
-                    self.saver.save(self.sess, os.path.join(os.getcwd(),self.base_dir, self.model_name, 'chekpoints','my-model'))
-                       
-                if epoch%display_step == 0:
-                    print('Cost after ' + str(epoch+1) + ' epoch is: '+ str(epoch_cost))
-                    print('Train accuracy is: ' + str(epoch_accuracy))
+                    if global_step % sumary_step == 0:
+                        self.train_summary_writer.add_summary(train_summary, global_step)
 
-                if epoch%summary_step == 0:
-                    if os.path.exists(os.path.join(os.getcwd(),self.base_dir,self.model_name, 'summaries'))== False:
-                        os.makedirs(os.path.join(os.getcwd(),self.base_dir, self.model_name, 'summaries'),exist_ok=True)
-                        tf.summary.FileWriter(os.path.join(os.getcwd(),self.base_dir, self.model_name, 'summaries'), self.sess.graph)
-                    else:
-                        tf.summary.FileWriter(os.path.join(os.getcwd(),self.base_dir, self.model_name, 'summaries'), self.sess.graph)
+                    if global_step % checkpoint_step == 0:
+                        self.saver.save(self.sess, os.path.join(self.checkpoint_dir, self.model_name + ".ckpt"), global_step=global_step)
+
+                    if global_step % display_step == 0:
 
     def test_model(self):
         minibatch_full_test = round(len(self.test_paths) / self.test_batch_size)
@@ -112,7 +109,7 @@ class BaseNN:
         x_test_data = []
         for i in range(minibatch_full_test):
             x_test_, y_test_= self.data_loader.test_data_loader(i)
-            x_test_data.append(self.data_loader.test_data_loader(i))
+            x_test_data.append(self.    .test_data_loader(i))
             x_test = x_test + x_test_
             y_test = y_test + y_test_
         x_test = tf.stack(x_test, axis = 0)

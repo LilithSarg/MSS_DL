@@ -12,8 +12,6 @@ class DNN(BaseNN):
         return pred
       
     def metrics(self, Y, Y_pred):
-        Y_ = tf.reshape(Y, [int(self.sequence_length), int(self.train_batch_size), int(self.fft_length)])
-        correct_pred = tf.equal(tf.argmax(Y_pred, 1), tf.argmax(Y_, 1))
         cost = tf.reduce_mean(tf.square(Y_pred - Y_))
-        accuracy = tf.reduce_mean(tf.cast(Y_pred, 'float'))
-        return cost, accuracy
+        tf.summary.Scalar('cost_funtion', cost)
+        return cost
