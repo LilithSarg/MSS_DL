@@ -8,9 +8,9 @@ class DataLoader:
     def __init__(self, train_spec_dir, val_spec_dir, test_spec_dir, train_batch_size, val_batch_size, 
             test_batch_size, sequence_length, fft_length):
 
-        self.train_paths = glob.glob(os.path.join(train_spec_dir, '*/*spectograms/*'), recursive=True)
-        self.val_paths = glob.glob(os.path.join(val_spec_dir, '*/*spectograms/*'), recursive=True)
-        self.test_paths = glob.glob(os.path.join(test_spec_dir, '*/*spectograms/*'), recursive=True)
+        self.train_paths = glob.glob(os.path.join(train_spec_dir, '*.npy'), recursive=True)
+        self.val_paths = glob.glob(os.path.join(val_spec_dir, '*.npy'), recursive=True)
+        self.test_paths = glob.glob(os.path.join(test_spec_dir, '*.npy'), recursive=True)
 
         self.train_batch_size = train_batch_size
         self.val_batch_size = val_batch_size

@@ -12,9 +12,9 @@ class BaseNN:
         self.data_loader = DataLoader(train_spec_dir, val_spec_dir, test_spec_dir, train_batch_size, 
                 val_batch_size, test_batch_size, sequence_length, fft_length)
 
-        self.train_paths = glob.glob(os.path.join(train_spec_dir, '*/*/*'), recursive=True)
-        self.val_paths = glob.glob(os.path.join(val_spec_dir, '*/*/*'), recursive=True)
-        self.test_paths = glob.glob(os.path.join(test_spec_dir, '*/*/*'), recursive=True)
+        self.train_paths = glob.glob(os.path.join(train_spec_dir, '*.npy'), recursive=True)
+        self.val_paths = glob.glob(os.path.join(val_spec_dir, '*.npy'), recursive=True)
+        self.test_paths = glob.glob(os.path.join(test_spec_dir, '*.npy'), recursive=True)
         
         self.sequence_length = sequence_length
         self.fft_length = fft_length 
@@ -30,7 +30,7 @@ class BaseNN:
         self.max_to_keep = max_to_keep
         self.model_name = model_name
         self.summary_dir = os.path.join(base_dir, 'summary')
-        # checkpoints dir 
+        self.checkpoint_dir =  os.path.join(base_dir, 'checkpoint')
 
     def create_network(self):            # 100             199              401
         self.X = tf.placeholder('float', [None, self.sequence_length, self.fft_length], name = 'X')
@@ -94,7 +94,7 @@ class BaseNN:
 
                         self.val_summary_writer.add_summary(val_summary, global_step)
 
-                    if global_step % sumary_step == 0:
+                    if global_step % summary_step == 0:
                         self.train_summary_writer.add_summary(train_summary, global_step)
 
                     if global_step % checkpoint_step == 0:

@@ -9,7 +9,7 @@ class DNN(BaseNN):
         outs, _ = tf.contrib.rnn.static_rnn(lstm, input, dtype = "float32")
         outs_ = tf.stack(outs, axis = 0)
         pred = tf.layers.dense(outs_, units = self.fft_length, activation = tf.nn.sigmoid)
-        return pred
+        return tf.reshape(pred, [int(self.train_batch_size), int(self.sequence_length), int(self.fft_length)])
       
     def metrics(self, Y, Y_pred):
         cost = tf.reduce_mean(tf.square(Y_pred - Y))

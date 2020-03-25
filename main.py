@@ -7,13 +7,13 @@ tf.app.flags.DEFINE_string('val_spec_dir', '/content/gdrive/My Drive/project_fol
 tf.app.flags.DEFINE_string('test_spec_dir', '/content/gdrive/My Drive/project_folder/DL_project/MUSDB18-HQ/spectograms/val', 'Testing spectograms data directory.')
 
 tf.app.flags.DEFINE_boolean('train', True, 'whether to train the network')
-tf.app.flags.DEFINE_integer('num_epochs', 3, 'epochs to train')
+tf.app.flags.DEFINE_integer('num_epochs', 50, 'epochs to train')
 tf.app.flags.DEFINE_integer('train_batch_size', 100, 'number of elements in a training batch')
 tf.app.flags.DEFINE_integer('val_batch_size', 100, 'number of elements in a validation batch')
 tf.app.flags.DEFINE_integer('test_batch_size', 100, 'number of elements in a testing batch')
 
 tf.app.flags.DEFINE_integer('sequence_length', 199, 'Ms occurrences in a second frame.') #height_of_image 
-tf.app.flags.DEFINE_float('fft_length', 802, 'Fourier coefficients in a sequence length.') #width of image #should be 401 DONE
+tf.app.flags.DEFINE_float('fft_length', 401, 'Fourier coefficients in a sequence length.') #width of image #should be 401 DONE
 
 tf.app.flags.DEFINE_float('learning_rate', 0.001, 'Learning rate of the optimizer')
 
