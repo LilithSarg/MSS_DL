@@ -101,6 +101,8 @@ class BaseNN:
                         self.saver.save(self.sess, os.path.join(self.checkpoint_dir, self.model_name + ".ckpt"), global_step=global_step)
 
                     if global_step % display_step == 0:
+                        print('Epoch --> {}'.format(epoch))
+                        print('Batch --> {}'.format(k_th_batch))
 
     def test_model(self):
         minibatch_full_test = round(len(self.test_paths) / self.test_batch_size)
