@@ -21,10 +21,10 @@ tf.app.flags.DEFINE_integer('display_step', 2, 'Number of steps we cycle through
 tf.app.flags.DEFINE_integer('validation_step', 2, 'Number of steps we cycle through before validating the model.')
 
 tf.app.flags.DEFINE_string('base_dir', '/content/gdrive/My Drive/project_folder/DL_project/MSS_DL/results', 'Directory in which results will be stored.')
-tf.app.flags.DEFINE_integer('checkpoint_step', 300, 'Number of steps we cycle through before saving checkpoint.')
+tf.app.flags.DEFINE_integer('checkpoint_step', 10, 'Number of steps we cycle through before saving checkpoint.')
 tf.app.flags.DEFINE_integer('max_to_keep', 5, 'Number of checkpoint files to keep.')
 
-tf.app.flags.DEFINE_integer('summary_step', 51, 'Number of steps we cycle through before saving summary.')
+tf.app.flags.DEFINE_integer('summary_step', 10, 'Number of steps we cycle through before saving summary.')
 
 tf.app.flags.DEFINE_string('model_name', 'lstm_test', 'name of model')
 

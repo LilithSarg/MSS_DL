@@ -59,38 +59,39 @@ class BaseNN:
                 self.sess.run(tf.global_variables_initializer()) 
 
     def train_model(self, display_step, validation_step, checkpoint_step, summary_step):
-            print('MODEL TRAIN ---------------> STARTED ')
-            minibatch_full = round(len(self.train_paths)/self.train_batch_size)
-            minibatch_full_v = round(len(self.val_paths)/self.val_batch_size)
-            print('TRAIN MINIBATCHES -->', minibatch_full)
+            minibatch_full = round(len(self.train_paths) / self.train_batch_size)
+            minibatch_full_v = round(len(self.val_paths) / self.val_batch_size)
+            print('Train minibatches --> {}'.format(minibatch_full))
 
             for epoch in range(self.num_epochs):
-                print('Epoch --> {}'.format(epoch))
+                print('[*] Epoch --> {}'.format(epoch))
                 random.shuffle(self.data_loader.train_paths)
                 random.shuffle(self.data_loader.val_paths)
                 for k_th_batch in range(minibatch_full):
                     train_matrix, train_label = self.data_loader.train_data_loader(k_th_batch)
-                    minibatch_opt, train_minibatch_cost, train_summary, global_step = self.sess.run([self.opt, self.cost, self.summary_op, self.global_step], 
+                    if tf.shape(self.X) == tf.shape(train_matrix):
+                        minibatch_opt, train_minibatch_cost, train_summary, global_step = self.sess.run([self.opt, self.cost, self.summary_op, self.global_step], 
                                                                                   feed_dict = {self.X: train_matrix, self.Y: train_label})
-                    print('[*] Global step --> {}'.format(global_step))
+                    print('Global step --> {}'.format(global_step))
                     if global_step % validation_step == 0:
                         val_matrix, val_label = self.data_loader.val_data_loader(k_th_batch)
-                        val_minibatch_cost, val_summary = self.sess.run([self.cost, self.summary_op], 
+                        if tf.shape(self.X) == tf.shape(val_matrix):
+                            val_minibatch_cost, val_summary = self.sess.run([self.cost, self.summary_op], 
                                                                          feed_dict = {self.X: val_matrix, self.Y: val_label})
 
                         self.val_summary_writer.add_summary(val_summary, global_step)
-                        print('[*] Validation loss -- > {}'.format(val_minibatch_cost))
+                        print('Validation loss -- > {}'.format(val_minibatch_cost))
 
                     if global_step % summary_step == 0:
                         self.train_summary_writer.add_summary(train_summary, global_step)
-                        print('[*] Summary done')
+                        print('Summary done')
 
                     if global_step % checkpoint_step == 0:
                         self.saver.save(self.sess, os.path.join(self.checkpoint_dir, self.model_name + ".ckpt"), global_step=global_step)
-                        print('[*] Checkpoint save done')
+                        print('Checkpoint save done')
 
                     if global_step % display_step == 0:
-                        print('Loss --> {}'.format(train_minibatch_cost))
+                        print('Train loss --> {}'.format(train_minibatch_cost))
 
     # def test_model(self):
     #     minibatch_full_test = round(len(self.test_paths) / self.test_batch_size)
