@@ -69,29 +69,27 @@ class BaseNN:
                 random.shuffle(self.data_loader.val_paths)
                 for k_th_batch in range(minibatch_full):
                     train_matrix, train_label = self.data_loader.train_data_loader(k_th_batch)
-                    if np.array(self.X).shape == np.array(train_matrix).shape:
-                        minibatch_opt, train_minibatch_cost, train_summary, global_step = self.sess.run([self.opt, self.cost, self.summary_op, self.global_step], 
+                    minibatch_opt, train_minibatch_cost, train_summary, global_step = self.sess.run([self.opt, self.cost, self.summary_op, self.global_step], 
                                                                                   feed_dict = {self.X: train_matrix, self.Y: train_label})
-                        print('Global step --> {}'.format(global_step))
-                        if global_step % validation_step == 0:
-                            val_matrix, val_label = self.data_loader.val_data_loader(k_th_batch)
-                            if np.array(self.X).shape == np.array(val_matrix).shape:
-                                val_minibatch_cost, val_summary = self.sess.run([self.cost, self.summary_op], 
-                                                                             feed_dict = {self.X: val_matrix, self.Y: val_label})
+                    print('Global step --> {}'.format(global_step))
+                    if global_step % validation_step == 0:
+                        val_matrix, val_label = self.data_loader.val_data_loader(k_th_batch)
+                        val_minibatch_cost, val_summary = self.sess.run([self.cost, self.summary_op], 
+                                                                         feed_dict = {self.X: val_matrix, self.Y: val_label})
 
-                            self.val_summary_writer.add_summary(val_summary, global_step)
-                            print('Validation loss -- > {}'.format(val_minibatch_cost))
+                        self.val_summary_writer.add_summary(val_summary, global_step)
+                        print('Validation loss -- > {}'.format(val_minibatch_cost))
 
-                        if global_step % summary_step == 0:
-                            self.train_summary_writer.add_summary(train_summary, global_step)
-                            print('Summary done')
+                    if global_step % summary_step == 0:
+                        self.train_summary_writer.add_summary(train_summary, global_step)
+                        print('Summary done')
 
-                        if global_step % checkpoint_step == 0:
-                            self.saver.save(self.sess, os.path.join(self.checkpoint_dir, self.model_name + ".ckpt"), global_step=global_step)
-                            print('Checkpoint save done')
+                    if global_step % checkpoint_step == 0:
+                        self.saver.save(self.sess, os.path.join(self.checkpoint_dir, self.model_name + ".ckpt"), global_step=global_step)
+                        print('Checkpoint save done')
 
-                        if global_step % display_step == 0:
-                            print('Train loss --> {}'.format(train_minibatch_cost))
+                    if global_step % display_step == 0:
+                        print('Train loss --> {}'.format(train_minibatch_cost))
 
     # def test_model(self):
     #     minibatch_full_test = round(len(self.test_paths) / self.test_batch_size)
