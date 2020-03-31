@@ -11,8 +11,6 @@ step = window_len // 2
 stems = ['mixture', 'vocals']
 folders = ['train', 'val']
 dur_mismatch = ['Matthew Entwistle - Dont You Ever']
-bad_songs = ['Music Delta - Country2', 'Music Delta - 80s Rock', 'Music Delta - Gospel', 'Music Delta - Britpop']
-
 
 def read_signal(path):
     sr, wav = wavfile.read(path)
@@ -69,15 +67,10 @@ for split in folders:
             frame_count = mix_frame_count
             mix_sec_fft, vocal_sec_fft = \
                             [ frame_fft_sa(cur_data_, frame_count, window_len, step) for cur_data_ in [mix_cur_data, vocal_cur_data] ]
-            if np.array(mix_sec_fft).shape == np.array(vocal_sec_fft).shape == (199, 401):
+            if len(mix_cur_data) ==  window_sec * sr:
               all_stem_magn = np.reshape(np.concatenate((mix_sec_fft, vocal_sec_fft)), (2, 199, 401))
               cur_file = '{}_{}_{}_SPEC.npy'.format(int(second * stride), int(second * stride + window_sec), song)
-              np.save('../../{}/{}/{}_{}_{}_SPEC.npy'.format('spectograms', split, int(second * stride), int(second * stride + window_sec), song), all_stem_magn)
-              # if cur_file in os.listdir('../../{}/{}/'.format('spectograms', split)) == False:
-              #   print(cur_file)
-              #   np.save('../../{}/{}/{}_{}_{}_SPEC.npy'.format('spectograms', split, int(second * stride), int(second * stride + window_sec), song), all_stem_magn)
-              # if cur_file in os.listdir('../../{}/{}/'.format('spectograms', split)) == False:
-              #   print('../../{}/{}/{}_{}_{}_SPEC.npy'.format('spectograms', split, int(second * stride), int(second * stride + window_sec), song))
-              # np.save('../../{}/{}/{}_{}_{}_SPEC.npy'.format('spectograms', split, int(second * stride), int(second * stride + window_sec), song), all_stem_magn)
+              if cur_file in os.listdir('../../{}/{}/'.format('spectograms', 'train')) == False:
+                np.save('../../{}/{}/{}_{}_{}_SPEC.npy'.format('spectograms', 'train', int(second * stride), int(second * stride + window_sec), song), all_stem_magn)
         os.chdir('../')
     os.chdir('../')

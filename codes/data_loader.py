@@ -19,7 +19,7 @@ class DataLoader:
         self.fft_length = fft_length
 
     #load_image
-    def load_sec_mpa(self, path): # takes .npy files
+    def load_sec_mpa(self, path):    # takes .npy file where first sublist is mixture magnitude, second subset is vocal magnitude
         matrix = np.load(path)[0]    # loads only magn mix
         label  = np.load(path)[1]    # loads only magn vocal 
         return matrix, label
