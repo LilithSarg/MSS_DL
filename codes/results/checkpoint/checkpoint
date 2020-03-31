@@ -1,0 +1,5 @@
+model_checkpoint_path: "/content/gdrive/My Drive/project_folder/DL_project/MSS_DL/codes/results/checkpoint/lstm_test.ckpt-40"
+all_model_checkpoint_paths: "/content/gdrive/My Drive/project_folder/DL_project/MSS_DL/codes/results/checkpoint/lstm_test.ckpt-10"
+all_model_checkpoint_paths: "/content/gdrive/My Drive/project_folder/DL_project/MSS_DL/codes/results/checkpoint/lstm_test.ckpt-20"
+all_model_checkpoint_paths: "/content/gdrive/My Drive/project_folder/DL_project/MSS_DL/codes/results/checkpoint/lstm_test.ckpt-30"
+all_model_checkpoint_paths: "/content/gdrive/My Drive/project_folder/DL_project/MSS_DL/codes/results/checkpoint/lstm_test.ckpt-40"
