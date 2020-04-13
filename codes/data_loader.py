@@ -20,9 +20,10 @@ class DataLoader:
 
     #load_image
     def load_sec_mpa(self, path):    # takes .npy file where first sublist is mixture magnitude, second subset is vocal magnitude
-        matrix = np.load(path)[0]    # loads only magn mix
+        matrix = np.load(path)[0]    # loads only magn mix 
         label  = np.load(path)[1]    # loads only magn vocal 
-        return matrix, label
+        ratio_mask = matrix / (label + 10**(-6))
+        return matrix, np.clip(ratio_mask, 0, 1)
 
     def batch_data_loader(self, batch_size, file_paths, index):
         matrix = []

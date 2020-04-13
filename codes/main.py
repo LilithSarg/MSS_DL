@@ -12,8 +12,8 @@ tf.app.flags.DEFINE_integer('train_batch_size', 100, 'number of elements in a tr
 tf.app.flags.DEFINE_integer('val_batch_size', 100, 'number of elements in a validation batch')
 tf.app.flags.DEFINE_integer('test_batch_size', 100, 'number of elements in a testing batch')
 
-tf.app.flags.DEFINE_integer('sequence_length', 199, 'Ms occurrences in a second frame.') #height_of_image 
-tf.app.flags.DEFINE_float('fft_length', 401, 'Fourier coefficients in a sequence length.') #width of image #should be 401 DONE
+tf.app.flags.DEFINE_integer('sequence_length', 199, 'Ms occurrences in a second frame.') # height_of_image 
+tf.app.flags.DEFINE_float('fft_length', 401, 'Fourier coefficients in a sequence length.') # width of image #should be 401 DONE
 
 tf.app.flags.DEFINE_float('learning_rate', 0.001, 'Learning rate of the optimizer')
 

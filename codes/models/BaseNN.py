@@ -73,7 +73,8 @@ class BaseNN:
                                                                                   feed_dict = {self.X: train_matrix, self.Y: train_label})
                     print('Global step --> {}'.format(global_step))
                     if global_step % validation_step == 0:
-                        val_matrix, val_label = self.data_loader.val_data_loader(k_th_batch)
+                        k_th_batch_val = int(k_th_batch % minibatch_full_v)
+                        val_matrix, val_label = self.data_loader.val_data_loader(k_th_batch_val)
                         val_minibatch_cost, val_summary = self.sess.run([self.cost, self.summary_op], 
                                                                          feed_dict = {self.X: val_matrix, self.Y: val_label})
 
