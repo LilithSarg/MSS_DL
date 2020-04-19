@@ -62,6 +62,7 @@ class BaseNN:
             minibatch_full = round(len(self.train_paths) / self.train_batch_size)
             minibatch_full_v = round(len(self.val_paths) / self.val_batch_size)
             print('Train minibatches --> {}'.format(minibatch_full))
+            print('Validation minibatches --> {}'.format(minibatch_full_v))
 
             for epoch in range(self.num_epochs):
                 print('[*] Epoch --> {}'.format(epoch))
@@ -69,6 +70,7 @@ class BaseNN:
                 random.shuffle(self.data_loader.val_paths)
                 for k_th_batch in range(minibatch_full):
                     train_matrix, train_label = self.data_loader.train_data_loader(k_th_batch)
+                    train_matrix, train_label = np.array(train_matrix), np.array(train_label)
                     minibatch_opt, train_minibatch_cost, train_summary, global_step = self.sess.run([self.opt, self.cost, self.summary_op, self.global_step], 
                                                                                   feed_dict = {self.X: train_matrix, self.Y: train_label})
                     print('Global step --> {}'.format(global_step))
@@ -92,23 +94,40 @@ class BaseNN:
                     if global_step % display_step == 0:
                         print('Train loss --> {}'.format(train_minibatch_cost))
 
-    # def test_model(self):
-    #     minibatch_full_test = round(len(self.test_paths) / self.test_batch_size)
-    #     x_test=[]
-    #     y_test=[]
-    #     x_test_data = []
-    #     for i in range(minibatch_full_test):
-    #         x_test_, y_test_= self.data_loader.test_data_loader(i)
-    #         x_test_data.append(self.    .test_data_loader(i))
-    #         x_test = x_test + x_test_
-    #         y_test = y_test + y_test_
-    #     x_test = tf.stack(x_test, axis = 0)
-    #     y_test = tf.stack(y_test, axis = 0)
-    #     for spec in x_test_data:
-    #         (test_x, test_y) = spec
-    #         test_cost, test_accuracy  = self.sess.run([self.cost, self.accuracy], feed_dict = {self.X: test_x, self.Y: test_y})
-    #     print("Test accuracy is: " + str(test_accuracy))
+    def test_model(self):
+        mix_wav = self.data_loader.test_data_loader()
+        ms = 50
+        real_sr = 16000
+        window_len  = ms * real_sr // 1000
+        step = window_len // 2
+        def vorbis_window(N):
+            return np.sin((np.pi / 2) * (np.sin(np.pi * np.array(range(N)) / N)) ** 2)
+        window_arr = vorbis_window(window_len)
+        def get_magn_phase(arr):
+            fft = np.fft.rfft(arr * window_arr)
+            magn = np.abs(fft) + 1e-7
+            phase = fft / magn
+            return magn, phase
 
+
+        tf.reset_default_graph()
+        imported_meta = tf.train.import_meta_graph("lstm_test.meta")
+        with tf.Session() as sess:
+            imported_meta.restore(sess, tf.train.latest_checkpoint('./'))
+            ratio_mask = sess.run(self.train_label)
+            print('Train ratio_mask: {}'.format(ratio_mask))
+
+            new_vocal = np.zeros(len(mix_wav))
+            mask = np.zeros(len(mix_wav))
+            frame_count = len(mix_wav) // step - 1
+            for i in range(frame_count):
+                mix_cur_window = mix_wav[i * step: i * step + window_len]
+                mix_magn, mix_phase = get_magn_phase(mix_cur_window)
+                mask_clip = ratio_mask * mix_magn
+                mask_clip_fft = mask_clip * mix_phase
+                mask_window = np.fft.irfft(mask_clip_fft) * vorbis_window(window_len)
+                mask[i * step: i * step + window_len] += mask_window
+            wavfile.write(os.path.join(base_dir, 'ratio_mask_test.wav'), real_sr, mask.astype("int16"))
                         
     @abstractmethod
     def network(self, X):
