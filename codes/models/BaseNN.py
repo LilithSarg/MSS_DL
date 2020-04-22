@@ -127,7 +127,10 @@ class BaseNN:
             mix_cur_data = mix_wav[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)]
             frame_count = len(mix_cur_data) // step - 1
             self.mix_sec_fft, self.mix_sec_phase = frame_fft_sa(mix_cur_data, frame_count, window_len, step)
-            mask_clip = self.Y_pred * self.mix_sec_fft
+            print(type(self.mix_sec_fft))
+            print(self.Y_pred.shape)
+            exit()
+            mask_clip = tf.mulmul(self.Y_pred, self.mix_sec_fft)
             mask_clip_fft = mask_clip * mix_sec_phase
             mask_window = np.fft.irfft(mask_clip_fft) * vorbis_window(window_len)
             mask[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)] += mask_window
