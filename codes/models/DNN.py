@@ -4,7 +4,6 @@ from tensorflow.contrib import rnn
 class DNN(BaseNN):
   
     def network(self, X):
-        tf.reset_default_graph()
         input = tf.unstack(value = X, num = self.sequence_length, axis = 1)
         lstm = tf.contrib.rnn.BasicLSTMCell(self.train_batch_size, forget_bias = True)
         outs, _ = tf.contrib.rnn.static_rnn(lstm, input, dtype = "float32")
