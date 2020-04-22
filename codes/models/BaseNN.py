@@ -40,7 +40,6 @@ class BaseNN:
         self.global_step = tf.Variable(0, trainable=False, name='global_step')  # number of batches
         self.opt = tf.train.AdamOptimizer(learning_rate = self.learning_rate).minimize(self.cost, global_step = self.global_step)
         
-
     def initialize_network(self):
             print("[*] Initializing network...")
             self.sess = tf.Session()
@@ -95,14 +94,6 @@ class BaseNN:
                         print('Train loss --> {}'.format(train_minibatch_cost))
 
     def test_model(self):
-        # tf.reset_default_graph()
-        mix_wav = self.data_loader.test_data_loader()
-        ms = 50
-        real_sr = 16000
-        window_len  = ms * real_sr // 1000
-        step = window_len // 2
-        stride = 0.6
-        window_sec = 5
         def vorbis_window(N):
             return np.sin((np.pi / 2) * (np.sin(np.pi * np.array(range(N)) / N)) ** 2)
         def get_magn_phase(arr):
@@ -120,6 +111,14 @@ class BaseNN:
                 sec_phase.append(np.hstack(phase))
             return sec_fft, sec_phase
 
+        mix_wav = self.data_loader.test_data_loader()
+        ms = 50
+        real_sr = 16000
+        window_len  = ms * real_sr // 1000
+        step = window_len // 2
+        stride = 0.6
+        window_sec = 5
+
         mask = np.zeros(len(mix_wav))
         frame_count = len(mix_wav) // step - 1
         seconds_count = int(np.round(len(mix_wav)/real_sr, decimals = 0))
@@ -128,11 +127,7 @@ class BaseNN:
             mix_cur_data = mix_wav[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)]
             frame_count = len(mix_cur_data) // step - 1
             self.mix_sec_fft, self.mix_sec_phase = frame_fft_sa(mix_cur_data, frame_count, window_len, step)
-            self.mix_sec_fft = tf.convert_to_tensor(np.array(self.mix_sec_fft, dtype="float32"))
-            self.mix_sec_fft = tf.reshape(self.mix_sec_fft, [-1, int(self.sequence_length), int(self.fft_length)])
-            self.y_preds_tf = self.network(self.mix_sec_fft)
-            ratio_mask = self.sess.run(self.y_preds_tf, feed_dict = self.mix_sec_fft)
-            mask_clip = ratio_mask * self.mix_sec_fft
+            mask_clip = self.Y_pred * self.mix_sec_fft
             mask_clip_fft = mask_clip * mix_sec_phase
             mask_window = np.fft.irfft(mask_clip_fft) * vorbis_window(window_len)
             mask[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)] += mask_window
