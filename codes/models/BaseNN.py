@@ -95,39 +95,50 @@ class BaseNN:
                         print('Train loss --> {}'.format(train_minibatch_cost))
 
     def test_model(self):
+        # tf.reset_default_graph()
         mix_wav = self.data_loader.test_data_loader()
         ms = 50
         real_sr = 16000
         window_len  = ms * real_sr // 1000
         step = window_len // 2
+        stride = 0.6
+        window_sec = 5
         def vorbis_window(N):
             return np.sin((np.pi / 2) * (np.sin(np.pi * np.array(range(N)) / N)) ** 2)
-        window_arr = vorbis_window(window_len)
         def get_magn_phase(arr):
             fft = np.fft.rfft(arr * window_arr)
             magn = np.abs(fft) + 1e-7
             phase = fft / magn
             return magn, phase
+        def frame_fft_sa(cur_data_, frame_count_, window_len_, step_):
+            sec_fft = []
+            sec_phase = []
+            for i in range(frame_count_):
+                cur_window = cur_data_[i * step_: i * step_ + window_len_]
+                magn, phase = get_magn_phase(cur_window)
+                sec_fft.append(np.hstack(magn))
+                sec_phase.append(np.hstack(phase))
+            return sec_fft, sec_phase
 
+        mask = np.zeros(len(mix_wav))
+        frame_count = len(mix_wav) // step - 1
+        seconds_count = int(np.round(len(mix_wav)/real_sr, decimals = 0))
+        window_arr = vorbis_window(window_len)
+        for second in range(0, int((1 + stride) * seconds_count), 5):
+            mix_cur_data = mix_wav[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)]
+            frame_count = len(mix_cur_data) // step - 1
+            self.mix_sec_fft, self.mix_sec_phase = frame_fft_sa(mix_cur_data, frame_count, window_len, step)
+            self.mix_sec_fft = tf.convert_to_tensor(np.array(self.mix_sec_fft, dtype="float32"))
+            self.mix_sec_fft = tf.reshape(self.mix_sec_fft, [-1, int(self.sequence_length), int(self.fft_length)])
+            self.y_preds_tf = self.network(self.mix_sec_fft)
+            ratio_mask = self.sess.run(self.y_preds_tf, feed_dict = self.mix_sec_fft)
+            mask_clip = ratio_mask * self.mix_sec_fft
+            mask_clip_fft = mask_clip * mix_sec_phase
+            mask_window = np.fft.irfft(mask_clip_fft) * vorbis_window(window_len)
+            mask[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)] += mask_window
 
-        tf.reset_default_graph()
-        imported_meta = tf.train.import_meta_graph("lstm_test.meta")
-        with tf.Session() as sess:
-            imported_meta.restore(sess, tf.train.latest_checkpoint('./'))
-            ratio_mask = sess.run(self.train_label)
-            print('Train ratio_mask: {}'.format(ratio_mask))
+        wavfile.write(os.path.join(base_dir, 'ratio_mask_test.wav'), real_sr, mask.astype("int16"))
 
-            new_vocal = np.zeros(len(mix_wav))
-            mask = np.zeros(len(mix_wav))
-            frame_count = len(mix_wav) // step - 1
-            for i in range(frame_count):
-                mix_cur_window = mix_wav[i * step: i * step + window_len]
-                mix_magn, mix_phase = get_magn_phase(mix_cur_window)
-                mask_clip = ratio_mask * mix_magn
-                mask_clip_fft = mask_clip * mix_phase
-                mask_window = np.fft.irfft(mask_clip_fft) * vorbis_window(window_len)
-                mask[i * step: i * step + window_len] += mask_window
-            wavfile.write(os.path.join(base_dir, 'ratio_mask_test.wav'), real_sr, mask.astype("int16"))
                         
     @abstractmethod
     def network(self, X):

@@ -2,6 +2,7 @@ import os
 import glob
 import numpy as np
 from random import randrange
+from scipy.io import wavfile
 
 class DataLoader:
 
@@ -40,8 +41,8 @@ class DataLoader:
         return self.batch_data_loader(self.val_batch_size, self.val_paths, index)
 
     def test_data_loader(self):
-        mix_sr, mix_wav =  wavfile.read(self.test_paths)
-        assert mix_sr == real_sr, exit()
+        mix_sr, mix_wav =  wavfile.read(self.test_paths[0])
+        assert mix_sr == 16000, exit()
         return mix_wav
 
 
