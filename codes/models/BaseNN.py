@@ -3,6 +3,7 @@ from data_loader import *
 from abc import abstractmethod
 import random
 import math
+import itertools
 
 class BaseNN:
     def __init__(self, train_spec_dir, val_spec_dir, test_spec_dir, num_epochs, train_batch_size,
@@ -119,23 +120,26 @@ class BaseNN:
         stride = 0.6
         window_sec = 5
 
-        mask = np.zeros(len(mix_wav))
+        mask  = np.zeros(len(mix_wav))
+        mask_ = np.zeros(window_sec * real_sr)
         frame_count = len(mix_wav) // step - 1
-        seconds_count = int(np.round(len(mix_wav)/real_sr, decimals = 0))
+        seconds_count = int(np.round(len(mix_wav) / real_sr, decimals = 0))
         window_arr = vorbis_window(window_len)
         for second in range(0, int((1 + stride) * seconds_count), 5):
             mix_cur_data = mix_wav[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)]
             frame_count = len(mix_cur_data) // step - 1
             self.mix_sec_fft, self.mix_sec_phase = frame_fft_sa(mix_cur_data, frame_count, window_len, step)
-            print(type(self.mix_sec_fft))
-            print(self.Y_pred.shape)
-            exit()
-            mask_clip = tf.mulmul(self.Y_pred, self.mix_sec_fft)
-            mask_clip_fft = mask_clip * mix_sec_phase
+            self.mix_sec_fft = np.array(self.mix_sec_fft)[np.newaxis, ...]
+            self.Y_pred_ = self.sess.run([self.Y_pred], feed_dict = {self.X: self.mix_sec_fft}) 
+            mask_clip = np.clip(self.Y_pred_, 0, 1) * self.mix_sec_fft
+            mask_clip_fft = mask_clip * self.mix_sec_phase
             mask_window = np.fft.irfft(mask_clip_fft) * vorbis_window(window_len)
-            mask[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)] += mask_window
+            for i in range(frame_count):
+                mask_[int(i * step): int(i * step + window_len)] += mask_window[0][0][i]
+            mask[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)] += mask_
+            mask_ = np.zeros(window_sec * real_sr)
 
-        wavfile.write(os.path.join(base_dir, 'ratio_mask_test.wav'), real_sr, mask.astype("int16"))
+        wavfile.write(os.path.join(self.base_dir, 'ratio_mask_test.wav'), real_sr, mask.astype("int16"))
 
                         
     @abstractmethod
