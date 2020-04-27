@@ -145,7 +145,7 @@ class BaseNN:
 
         # wavfile.write(os.path.join(self.base_dir, 'ratio_mask_test.wav'), real_sr, mask.astype("int16"))
 
-        
+
         def vorbis_window(N):
             return np.sin((np.pi / 2) * (np.sin(np.pi * np.array(range(N)) / N)) ** 2)
 
@@ -174,7 +174,10 @@ class BaseNN:
                 fft.append(cur_fft)
             inp = np.array(inp)[np.newaxis, ...]
             pred = self.sess.run(self.Y_pred, feed_dict = {self.X: inp})
-            new_fft = inp * pred # mix_cur_data * pred
+            print(np.max(np.array(pred)), np.min(np.array(pred)))
+            exit()
+            ratio_mask = pred/inp
+            new_fft = inp * ratio_mask # mix_cur_data * pred
             new_mix_cur_data = np.fft.irfft(new_fft) * vorbis_window_
             for j in range(len(new_mix_cur_data)):
                 new_wav_5[step * j : step * j + window] += new_mix_cur_data[0][j]
