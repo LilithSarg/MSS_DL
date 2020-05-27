@@ -4,6 +4,7 @@ from abc import abstractmethod
 import random
 import math
 import itertools
+from utils import *
 
 class BaseNN:
     def __init__(self, train_spec_dir, val_spec_dir, test_spec_dir, num_epochs, train_batch_size,
@@ -36,7 +37,8 @@ class BaseNN:
     def create_network(self):            # 100             199              401
         self.X = tf.placeholder('float', [None, self.sequence_length, self.fft_length], name = 'X')
         self.Y = tf.placeholder('float', [None, self.sequence_length, self.fft_length], name = 'Y')
-        self.Y_pred = self.network(self.X)
+        self.Y_pred = self.network_bgru(batch_x = self.X, seq_len = self.train_batch_size * [self.sequence_length])
+        # self.Y_pred = self.network_d5(self.X)
         self.cost = self.metrics(self.Y, self.Y_pred)
         self.global_step = tf.Variable(0, trainable=False, name='global_step')  # number of batches
         self.opt = tf.train.AdamOptimizer(learning_rate = self.learning_rate).minimize(self.cost, global_step = self.global_step)
@@ -70,8 +72,7 @@ class BaseNN:
                 random.shuffle(self.data_loader.val_paths)
                 for k_th_batch in range(minibatch_full):
                     train_matrix, train_label = self.data_loader.train_data_loader(k_th_batch)
-                    train_matrix, train_label = np.array(train_matrix), np.array(train_label)
-                    minibatch_opt, train_minibatch_cost, train_summary, global_step = self.sess.run([self.opt, self.cost, self.summary_op, self.global_step], 
+                    train_pred, minibatch_opt, train_minibatch_cost, train_summary, global_step = self.sess.run([self.Y_pred, self.opt, self.cost, self.summary_op, self.global_step], 
                                                                                   feed_dict = {self.X: train_matrix, self.Y: train_label})
                     print('Global step --> {}'.format(global_step))
                     if global_step % validation_step == 0:
@@ -95,62 +96,6 @@ class BaseNN:
                         print('Train loss --> {}'.format(train_minibatch_cost))
 
     def test_model(self):
-
-        # def get_magn_phase(arr):
-        #     fft = np.fft.rfft(arr * window_arr)
-        #     magn = np.abs(fft) + 1e-7
-        #     phase = fft / magn
-        #     return magn, phase
-        # def frame_fft_sa(cur_data_, frame_count_, window_len_, step_):
-        #     sec_fft = []
-        #     sec_phase = []
-        #     for i in range(frame_count_):
-        #         cur_window = cur_data_[i * step_: i * step_ + window_len_]
-        #         magn, phase = get_magn_phase(cur_window)
-        #         sec_fft.append(np.hstack(magn))
-        #         sec_phase.append(np.hstack(phase))
-        #     return sec_fft, sec_phase
-
-        # mix_wav = self.data_loader.test_data_loader()
-        # ms = 50
-        # real_sr = 16000
-        # window_len  = ms * real_sr // 1000
-        # step = window_len // 2
-        # stride = 1
-        # window_sec = 5
-
-        # mask  = np.zeros(len(mix_wav))
-        # mask_ = np.zeros(window_sec * real_sr)
-        # frame_count = len(mix_wav) // step - 1
-        # seconds_count = int(np.round(len(mix_wav) / real_sr, decimals = 0))
-        # window_arr = vorbis_window(window_len)
-        # for second in range(0, int((1 + stride) * seconds_count), 5):
-        #     mix_cur_data = mix_wav[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)]
-        #     print(np.array(mix_cur_data).shape)
-        #     print(second)
-        #     print(int(second * stride ), int((second * stride + window_sec)))
-
-        #     continue
-        #     frame_count = len(mix_cur_data) // step - 1
-        #     self.mix_sec_fft, self.mix_sec_phase = frame_fft_sa(mix_cur_data, frame_count, window_len, step)
-        #     self.mix_sec_fft = np.array(self.mix_sec_fft)[np.newaxis, ...]
-        #     self.Y_pred_ = self.sess.run([self.Y_pred], feed_dict = {self.X: self.mix_sec_fft})
-        #     mask_clip = np.clip(self.Y_pred_, 0, 1) * self.mix_sec_fft
-        #     mask_clip_fft = mask_clip * self.mix_sec_phase
-        #     mask_window = np.fft.irfft(mask_clip_fft) * vorbis_window(window_len)
-        #     for i in range(frame_count):
-        #         mask_[int(i * step): int(i * step + window_len)] += mask_window[0][0][i]
-        #     mask[int(second * stride * real_sr): int((second * stride + window_sec) * real_sr)] += mask_
-        #     mask_ = np.zeros(window_sec * real_sr)
-
-        # wavfile.write(os.path.join(self.base_dir, 'ratio_mask_test.wav'), real_sr, mask.astype("int16"))
-
-
-        def vorbis_window(N):
-            return np.sin((np.pi / 2) * (np.sin(np.pi * np.array(range(N)) / N)) ** 2)
-
-        mix_wav = self.data_loader.test_data_loader()
-
         ms = 50
         real_sr = 16000
         window_sec = 5
@@ -158,32 +103,61 @@ class BaseNN:
         window = real_sr * ms // 1000
         step = window // 2
         vorbis_window_ = vorbis_window(window)
-        output_wav = np.zeros(len(mix_wav))
-        window_input_count = len(mix_wav) // window_input
+        song_names, song_wav = self.data_loader.test_data_loader()
+        for song_i, mix_wav in enumerate(song_wav):
+            output_wav = np.zeros(len(mix_wav))
+            window_input_count = len(mix_wav) // window_input
+            window_ms = window_input // step - 1
+            for i in range(window_input_count):
+                new_wav_5 = np.zeros(window_input)
+                mix_cur_data = mix_wav[i * window_input: (i + 1) * window_input]
+                inp = []
+                fft = []
+                for j in range(window_ms):
+                    mix_cur_data_ms = mix_cur_data[step * j : step * j + window]
+                    cur_fft = np.fft.rfft(mix_cur_data_ms)
+                    magn = np.abs(cur_fft)
+                    inp.append(np.array(magn))
+                    fft.append(cur_fft)
+                inp = np.array(inp)[np.newaxis, ...]
+                ratio_mask = np.clip(self.sess.run(self.Y_pred, feed_dict = {self.X: inp}), 0, 1)
+                new_fft = fft * np.round(ratio_mask) # * (fft/inp)
+                new_mix_cur_data = np.fft.irfft(new_fft) * vorbis_window_
+                for j in range(new_mix_cur_data.shape[1]):
+                    new_wav_5[step * j : step * j + window] += new_mix_cur_data[0][j]
+                output_wav[i * window_input: (i + 1) * window_input] += new_wav_5
+            wavfile.write(os.path.join(self.base_dir, 'Separated_{}'.format(song_names[song_i])), real_sr, output_wav.astype("int16"))
+            print(song_names[song_i], 'DONE')
+        gt, pred = self.data_loader.test_data_loader_sdr()
+        assert len(gt) == len(pred)
+        window_input_count = len(gt) // window_input
         window_ms = window_input // step - 1
+        sdr_ = []
         for i in range(window_input_count):
-            new_wav_5 = np.zeros(window_input)
-            mix_cur_data = mix_wav[i * window_input: (i + 1) * window_input]
-            inp = []
-            fft = []
+            gt_cur_data = gt[i * window_input: (i + 1) * window_input]
+            pred_cur_data = pred[i * window_input: (i + 1) * window_input]
             for j in range(window_ms):
-                mix_cur_data_ms = mix_cur_data[step * j : step * j + window]
-                cur_fft = np.fft.rfft(mix_cur_data_ms)
-                magn = np.abs(cur_fft)
-                inp.append(np.array(magn))
-                fft.append(cur_fft)
-            inp = np.array(inp)[np.newaxis, ...]
-            pred = self.sess.run(self.Y_pred, feed_dict = {self.X: inp})
-            print(np.max(np.array(pred)), np.min(np.array(pred)))
-            exit()
-            ratio_mask = pred/inp
-            new_fft = inp * ratio_mask # mix_cur_data * pred
-            new_mix_cur_data = np.fft.irfft(new_fft) * vorbis_window_
-            for j in range(len(new_mix_cur_data)):
-                new_wav_5[step * j : step * j + window] += new_mix_cur_data[0][j]
-            output_wav[i * window_input: (i + 1) * window_input] += new_wav_5
-        wavfile.write(os.path.join(self.base_dir, 'ratio_mask_test.wav'), real_sr, output_wav.astype("int16"))
-
+                sdr_ms = []
+                gt_cur_data_ms = gt_cur_data[step * j : step * j + window]
+                pred_cur_data_ms = pred_cur_data[step * j : step * j + window]
+                gt_cur_fft = np.fft.rfft(gt_cur_data_ms)
+                pred_cur_fft = np.fft.rfft(pred_cur_data_ms)
+                gt_magn = np.abs(gt_cur_fft)
+                pred_magn = np.abs(pred_cur_fft)
+                diff = np.absolute(gt_magn - pred_magn)
+                SDR = 10*np.log10( np.mean(np.absolute(gt_magn**2)) / np.mean(diff**2) + 10e-7)
+                sdr_ms.append(SDR)
+            sdr_.append(sdr_ms)
+        from scipy import stats
+        sdr_ = np.array(sdr_)
+        print(sdr_)
+        print('Shape -->', sdr_.shape)
+        sdr_f = np.clip(sdr_[~np.isnan(sdr_)], 0, 100)
+        print(sdr_f)
+        print('Shape nan removed -->', sdr_f.shape)
+        print('Mean SDR -->', np.mean(sdr_f))
+        print('Median SDR -->', np.median(sdr_f))
+        print('Mode SDR -->', stats.mode(sdr_f))
                         
     @abstractmethod
     def network(self, X):

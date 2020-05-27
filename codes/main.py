@@ -2,12 +2,16 @@ import tensorflow as tf
 from models.DNN import *
 
 # Datasets
-tf.app.flags.DEFINE_string('train_spec_dir', '/content/gdrive/My Drive/project_folder/DL_project/MUSDB18-HQ/spectograms/train', 'Training spectograms data directory.')
-tf.app.flags.DEFINE_string('val_spec_dir', '/content/gdrive/My Drive/project_folder/DL_project/MUSDB18-HQ/spectograms/val', 'Validation spectograms data directory.')
-tf.app.flags.DEFINE_string('test_spec_dir', '/content/gdrive/My Drive/project_folder/DL_project/MUSDB18-HQ/spectograms/test', 'Testing spectograms data directory.')
+# tf.app.flags.DEFINE_string('train_spec_dir', '/content/gdrive/My Drive/project_folder/DL_project/MUSDB18-HQ/spectograms/train', 'Training spectograms data directory.')
+# tf.app.flags.DEFINE_string('val_spec_dir', '/content/gdrive/My Drive/project_folder/DL_project/MUSDB18-HQ/spectograms/val', 'Validation spectograms data directory.')
+# tf.app.flags.DEFINE_string('test_spec_dir', '/content/gdrive/My Drive/project_folder/DL_project/MUSDB18-HQ/spectograms/test', 'Testing spectograms data directory.')
+
+tf.app.flags.DEFINE_string('train_spec_dir', '', 'Training spectograms data directory.')
+tf.app.flags.DEFINE_string('val_spec_dir', '', 'Validation spectograms data directory.')
+tf.app.flags.DEFINE_string('test_spec_dir', '', 'Testing spectograms data directory.')
 
 tf.app.flags.DEFINE_boolean('train', False, 'whether to train the network')
-tf.app.flags.DEFINE_integer('num_epochs', 100, 'epochs to train')
+tf.app.flags.DEFINE_integer('num_epochs', 1000, 'epochs to train')
 tf.app.flags.DEFINE_integer('train_batch_size', 100, 'number of elements in a training batch')
 tf.app.flags.DEFINE_integer('val_batch_size', 100, 'number of elements in a validation batch')
 tf.app.flags.DEFINE_integer('test_batch_size', 100, 'number of elements in a testing batch')
@@ -20,7 +24,7 @@ tf.app.flags.DEFINE_float('learning_rate', 0.001, 'Learning rate of the optimize
 tf.app.flags.DEFINE_integer('display_step', 2, 'Number of steps we cycle through before displaying detailed progress.')
 tf.app.flags.DEFINE_integer('validation_step', 2, 'Number of steps we cycle through before validating the model.')
 
-tf.app.flags.DEFINE_string('base_dir', '/content/gdrive/My Drive/project_folder/DL_project/MSS_DL/codes/results', 'Directory in which results will be stored.')
+tf.app.flags.DEFINE_string('base_dir', '', 'Directory in which results will be stored.')
 tf.app.flags.DEFINE_integer('checkpoint_step', 10, 'Number of steps we cycle through before saving checkpoint.')
 tf.app.flags.DEFINE_integer('max_to_keep', 5, 'Number of checkpoint files to keep.')
 
